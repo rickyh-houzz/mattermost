@@ -218,7 +218,6 @@ export default class TeamList extends React.PureComponent<Props, State> {
         const {startCount, endCount} = this.getPaginationProps();
         let teamsToDisplay = this.isSearching(term, filters) ? teams : data;
         teamsToDisplay = teamsToDisplay.slice(startCount - 1, endCount);
-
         return teamsToDisplay.map((team) => {
             return {
                 cells: {

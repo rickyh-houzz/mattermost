@@ -88,6 +88,7 @@ const LazyPreparingWorkspace = React.lazy(() => import('components/preparing_wor
 const LazyTeamController = React.lazy(() => import('components/team_controller'));
 const LazyDelinquencyModalController = React.lazy(() => import('components/delinquency_modal'));
 const LazyOnBoardingTaskList = React.lazy(() => import('components/onboarding_tasklist'));
+const LazyPocPage = React.lazy(() => import('components/poc_page'));
 
 const CreateTeam = makeAsyncComponent('CreateTeam', LazyCreateTeam);
 const ErrorPage = makeAsyncComponent('ErrorPage', LazyErrorPage);
@@ -481,6 +482,10 @@ export default class Root extends React.PureComponent<Props, State> {
             <RootProvider>
                 <MobileViewWatcher/>
                 <Switch>
+                    <LoggedInRoute
+                        path={'/poc'}
+                        component={LazyPocPage}
+                    />
                     <Route
                         path={'/error'}
                         component={ErrorPage}
