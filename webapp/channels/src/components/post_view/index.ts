@@ -61,12 +61,12 @@ interface RouteViewParams {
     postid?: string;
 }
 
-type Props = { channelId: string } & RouteComponentProps<RouteViewParams>;
+type Props = { channelId: string; currentUserTeamName?: string } & RouteComponentProps<RouteViewParams>;
 
 function makeMapStateToProps() {
     return function mapStateToProps(state: GlobalState, ownProps: Props) {
         const params = ownProps.match?.params;
-        const team = getTeamByName(state, params?.team || "team-a");
+        const team = getTeamByName(state, ownProps.currentUserTeamName ?? (params?.team ?? ''));
         let teammate;
 
         const channel = getChannel(state, ownProps.channelId);

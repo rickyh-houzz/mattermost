@@ -1,33 +1,23 @@
+/* eslint-disable */
 import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
-import { bindActionCreators } from "redux";
-import { connect, useDispatch } from "react-redux";
+import { useDispatch } from "react-redux";
+import { Box, Button } from "@houzz/ui";
 import { Client4 } from "mattermost-redux/client";
-import { getTeamsList } from "mattermost-redux/selectors/entities/teams";
 import { login } from "actions/views/login";
 import { loadMe } from "mattermost-redux/actions/users";
-import {
-    getTeams as fetchTeams,
-    getTeamMembers,
-} from "mattermost-redux/actions/teams";
 import { selectTeam } from "mattermost-redux/actions/teams";
-import Sidebar from "components/sidebar";
-import ChannelController from "components/channel_layout/channel_controller";
 import {
     fetchAllMyTeamsChannelsAndChannelMembersREST,
-    fetchChannelsAndMembers,
     selectChannel,
 } from "mattermost-redux/actions/channels";
 import PostView from "components/post_view";
 import AdvancedCreatePost from "components/advanced_create_post";
-import { openModal } from "actions/views/modals";
-import NewChannelModal from "components/new_channel_modal/new_channel_modal";
-import { ModalIdentifiers } from "utils/constants";
 import { createChannel } from "mattermost-redux/actions/channels";
 import "components/advanced_text_editor/advanced_text_editor.scss";
 
 const teams = [
     {
-        name: "team a",
+        name: "team-a",
         id: "eqohri83ofdomdrngbwhmyw31y",
         projects: ["a-project-1", "a-project-2", "a-project-3"],
         users: [
@@ -49,7 +39,7 @@ const teams = [
         ],
     },
     {
-        name: "team b",
+        name: "team-b",
         id: "ay6q5xbdf7dk58bsyekdhcrswe",
         projects: ["b-project-1", "b-project-2"],
         users: [
@@ -72,54 +62,7 @@ const teams = [
     },
 ];
 
-// const handleOnModalConfirm = async () => {
-//     if (!canCreate) {
-//         return;
-//     }
-
-//     const channel: Channel = {
-//         team_id: currentTeamId,
-//         name: url,
-//         display_name: displayName,
-//         purpose,
-//         header: '',
-//         type,
-//         create_at: 0,
-//         creator_id: '',
-//         delete_at: 0,
-//         group_constrained: false,
-//         id: '',
-//         last_post_at: 0,
-//         last_root_post_at: 0,
-//         scheme_id: '',
-//         update_at: 0,
-//     };
-
-//     try {
-//         const {data: newChannel, error} = await dispatch(createChannel(channel, ''));
-//         if (error) {
-//             onCreateChannelError(error);
-//             return;
-//         }
-
-//         handleOnModalCancel();
-
-//         // If template selected, create a new board from this template
-//         if (canCreateFromPluggable && createBoardFromChannelPlugin) {
-//             try {
-//                 addBoardToChannel(newChannel.id);
-//             } catch (e: any) {
-//                 // eslint-disable-next-line no-console
-//                 console.log(e.message);
-//             }
-//         }
-//         dispatch(switchToChannel(newChannel));
-//     } catch (e) {
-//         onCreateChannelError({message: formatMessage({id: 'channel_modal.error.generic', defaultMessage: 'Something went wrong. Please try again.'})});
-//     }
-// };
-
-const PocPage = ({ actions }) => {
+const PocPage = () => {
     const [currentUser, setCurrentUser] = useState(teams[0].users[0]);
     const [currentUserChannels, setCurrentUserChannels] = useState([]);
     const [currentActiveChannel, setCurrentActiveChannel] = useState({});
@@ -132,17 +75,33 @@ const PocPage = ({ actions }) => {
         (team) => team.id === currentUser.teamId
     );
 
+    const updateMyChannels = async (currentUser) => {
+        const data = await Client4.getMyChannels(currentUser.teamId);
+        const currentUserTeam = teams.find(
+            (team) => team.id === currentUser.teamId
+        );
+        const validChannels = data?.filter((channel) =>
+            currentUserTeam.projects.includes(channel.purpose)
+        );
+        setCurrentUserChannels(validChannels);
+
+        if (validChannels?.length) {
+            setCurrentActiveChannel(validChannels[0]);
+            dispatch(selectChannel(validChannels[0].id));
+        } else {
+            setCurrentActiveChannel({});
+        }
+    };
+
     useLayoutEffect(() => {
         if (toggledAddChannelBtnId) {
             const rect = document
                 .getElementById(toggledAddChannelBtnId)
                 .getBoundingClientRect();
-            channelInputRef.current.style.display = "block";
+            channelInputRef.current.style.display = "flex";
             channelInputRef.current.style.position = "absolute";
-            // console.log('rect.left:', rect.left);
-            // console.log('window.scrollX:', window.scrollX);
             channelInputRef.current.style.left = `${
-                rect.left + window.scrollX + 105
+                rect.left + window.scrollX + 110
             }px`;
             channelInputRef.current.style.top = `${
                 rect.top + window.scrollY
@@ -155,94 +114,35 @@ const PocPage = ({ actions }) => {
     useEffect(() => {
         (async () => {
             Client4.setToken("");
+            setToggledAddChannelBtnId("");
             await dispatch(login(currentUser.username, "houzz123"));
             await dispatch(loadMe());
             dispatch(selectTeam(currentUser.teamId));
             await dispatch(fetchAllMyTeamsChannelsAndChannelMembersREST());
-
-            const data = await Client4.getMyChannels(currentUser.teamId);
-            const currentUserTeam = teams.find(
-                (team) => team.id === currentUser.teamId
-            );
-            const validChannels = data?.filter((channel) =>
-                currentUserTeam.projects.includes(channel.purpose)
-            );
-            setCurrentUserChannels(validChannels);
-
-            if (validChannels?.length) {
-                setCurrentActiveChannel(validChannels[0]);
-                dispatch(selectChannel(validChannels[0].id));
-            } else {
-                setCurrentActiveChannel({});
-            }
-            // const projectChannelsMap = {};
-
-            // for (const project of data) {
-            //     // use purpose to mock project id
-            //     const { purpose } = project;
-
-            //     if (purpose) {
-            //         if (projectChannelsMap[purpose]) {
-            //             projectChannelsMap[purpose].push(project);
-            //         } else {
-            //             projectChannelsMap[purpose] = [project];
-            //         }
-            //     }
-            // }
-
-            // setProjectsChannels(
-            //     Object.keys(projectChannelsMap).map((projectId) => {
-            //         return {
-            //             projectId,
-            //             channels: projectChannelsMap[projectId],
-            //         };
-            //     })
-            // );
-
-            // if (Object.keys(projectChannelsMap).length) {
-            //     const firstProjectId = Object.keys(projectChannelsMap)[0];
-            //     setCurrentActiveChannel(projectChannelsMap[firstProjectId][0]);
-            // }
+            await updateMyChannels(currentUser);
         })();
     }, [currentUser]);
 
-    // console.log(teams);
-
-    // useEffect(() => {
-    //     actions.getData();
-    // }, []);
-
-    // useEffect(() => {
-    //     (async () => {
-    //         const promises = teams.map(({ id }) =>
-    //             Client4.getTeamMembers(id, 0, 30)
-    //         );
-    //         const data = await Promise.all(promises);
-    //         console.log(data);
-    //     })();
-    // }, [teams]);
-
     return (
         <div className="app__body channel-view" style={{ display: "flex" }}>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, padding: "8px" }}>
                 <div>
+                    <h3>select user:</h3>
                     {teams.map(({ name, id, users }) => (
                         <div
                             key={id}
                             style={{
-                                border: "1px solid ",
                                 padding: "4px",
                                 margin: "4px",
                             }}
                         >
-                            <h2>{name}</h2>
+                            <h4>{name}</h4>
                             {users.map(({ id, username, teamId }) => (
-                                <div
+                                <Box
                                     key={id}
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                    }}
+                                    display="flex"
+                                    alignItems="center"
+                                    ml="S"
                                 >
                                     <input
                                         type="radio"
@@ -261,63 +161,74 @@ const PocPage = ({ actions }) => {
                                     <span style={{ marginLeft: "4px" }}>
                                         {username}
                                     </span>
-                                </div>
+                                </Box>
                             ))}
                         </div>
                     ))}
                 </div>
-                {/* <Sidebar /> */}
-                {/* <ChannelController shouldRenderCenterChannel={true} /> */}
-
+                <hr />
                 <div>
-                    Projects:
-                    {currentUserTeam.projects.map((project, pIdx) => (
-                        <div key={project}>
-                            {project}
-                            <button
-                                id={`add-btn-${project}`}
-                                onClick={() => {
-                                    setToggledAddChannelBtnId((prev) => {
-                                        if (prev !== `add-btn-${project}`) {
-                                            return `add-btn-${project}`;
-                                        }
-                                        return "";
-                                    });
-                                }}
-                            >
-                                add channel
-                            </button>
+                    <h3>{currentUserTeam.name}'s projects:</h3>
+                    {currentUserTeam.projects.map((project) => (
+                        <Box key={project} ml="S">
+                            <Box display="flex" alignItems="center">
+                                <h4>{project}</h4>
+                                <Button
+                                    id={`add-btn-${project}`}
+                                    ml="S"
+                                    size="small"
+                                    onClick={() => {
+                                        setToggledAddChannelBtnId((prev) => {
+                                            if (prev !== `add-btn-${project}`) {
+                                                return `add-btn-${project}`;
+                                            }
+                                            return "";
+                                        });
+                                    }}
+                                >
+                                    add channel
+                                </Button>
+                            </Box>
                             {currentUserChannels
                                 .filter(
                                     // use purpose to mock project id
                                     (channel) => channel.purpose === project
                                 )
-                                .map((channel, cIdx) => (
-                                    <div
+                                .map((channel) => (
+                                    <Box
                                         key={channel.id}
-                                        style={{
-                                            fontWeight:
-                                                currentActiveChannel.id ===
-                                                channel.id
-                                                    ? "bold"
-                                                    : "normal",
-                                        }}
+                                        style={{ cursor: "pointer" }}
+                                        ml="S"
+                                        p="XXS"
+                                        backgroundColor={
+                                            currentActiveChannel.id ===
+                                            channel.id
+                                                ? "rgba(0, 0, 0, 0.05)"
+                                                : undefined
+                                        }
+                                        fontSize="16px"
+                                        fontWeight={
+                                            currentActiveChannel.id ===
+                                            channel.id
+                                                ? "bold"
+                                                : "normal"
+                                        }
                                         onClick={() => {
                                             setCurrentActiveChannel(channel);
                                             dispatch(selectChannel(channel.id));
                                         }}
                                     >
                                         {channel.display_name}
-                                    </div>
+                                    </Box>
                                 ))}
-                        </div>
+                        </Box>
                     ))}
                 </div>
             </div>
-
             <div ref={channelViewRef} style={{ height: "89vh", flex: 3 }}>
                 <PostView
                     channelId={currentActiveChannel.id}
+                    currentUserTeamName={currentUserTeam.name}
                     // focusedPostId={this.state.focusedPostId}
                 />
                 <div
@@ -330,13 +241,16 @@ const PocPage = ({ actions }) => {
                     />
                 </div>
             </div>
-            <div ref={channelInputRef}>
+            <Box ref={channelInputRef} alignItems="center">
                 <input
                     type="text"
+                    placeholder="channel name"
                     value={newChannelName}
                     onChange={(e) => setNewChannelName(e.target.value)}
                 />
-                <button
+                <Button
+                    ml="XXS"
+                    size="small"
                     onClick={async () => {
                         const channel = {
                             team_id: currentUserTeam.id,
@@ -359,34 +273,16 @@ const PocPage = ({ actions }) => {
                             update_at: 0,
                         };
                         await dispatch(createChannel(channel, ""));
+                        await updateMyChannels(currentUser);
                         setNewChannelName("");
                         setToggledAddChannelBtnId("");
                     }}
                 >
                     Add
-                </button>
-            </div>
+                </Button>
+            </Box>
         </div>
     );
 };
 
-function mapStateToProps(state) {
-    const teams = getTeamsList(state);
-
-    return {
-        teams,
-    };
-}
-
-function mapDispatchToProps(dispatch) {
-    return {
-        actions: bindActionCreators(
-            {
-                getData: () => fetchTeams(0, 10, true),
-            },
-            dispatch
-        ),
-    };
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(PocPage);
+export default PocPage;
