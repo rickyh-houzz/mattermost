@@ -345,7 +345,7 @@ async function initializeModuleFederation() {
                 'react-intl',
                 'react-redux',
                 'react-router-dom',
-                'styled-components',
+                // 'styled-components',
             ], true),
         ],
     };

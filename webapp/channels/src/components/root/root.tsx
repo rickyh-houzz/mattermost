@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import SaasTheme from '@houzz/ui-themes/saas';
+import SaasTheme from '@houzz/ui-themes/saas-mono';
 import classNames from 'classnames';
 import deepEqual from 'fast-deep-equal';
 import React from 'react';

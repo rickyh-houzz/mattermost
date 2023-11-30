@@ -11,6 +11,7 @@
     "@giphy/js-fetch-api": "5.1.0",
     "@giphy/react-components": "8.1.0",
     "@guyplusplus/turndown-plugin-gfm": "1.0.7",
+    "@houzz/icons": "1.0.91",
     "@houzz/ui": "^2.23.1",
     "@houzz/ui-themes": "^2.12.1",
     "@mattermost/client": "*",
